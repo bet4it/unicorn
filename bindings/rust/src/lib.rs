@@ -125,6 +125,44 @@ impl Unicorn {
     }
 }
 
+impl From<uc_handle> for Unicorn {
+    fn from(handle: uc_handle) -> Unicorn {
+
+        let mut result: libc::size_t = Default::default();
+        let err = unsafe { ffi::uc_query(handle, Query::ARCH, &mut result) };
+        if err == uc_error::OK {
+            let arch = match result {
+                1 => Arch::ARM,
+                2 => Arch::ARM64,
+                3 => Arch::MIPS,
+                4 => Arch::X86,
+                5 => Arch::PPC,
+                6 => Arch::SPARC,
+                7 => Arch::M68K,
+                8 => Arch::MAX,
+                _ => panic!("Cannot convert to Unicorn")
+            };
+
+            Unicorn {
+                inner: Box::pin(UnicornInner {
+                    uc: handle,
+                    arch: arch,
+                    code_hooks: HashMap::new(),
+                    block_hooks: HashMap::new(),
+                    mem_hooks: HashMap::new(),
+                    intr_hooks: HashMap::new(),
+                    insn_in_hooks: HashMap::new(),
+                    insn_out_hooks: HashMap::new(),
+                    insn_sys_hooks: HashMap::new(),
+                    _pin: std::marker::PhantomPinned,
+                }),
+            }
+        } else {
+            panic!("Cannot convert to Unicorn")
+        }
+    }
+}
+
 impl Drop for Unicorn {
     fn drop(&mut self) {
         unsafe { ffi::uc_close(self.inner.uc) };
