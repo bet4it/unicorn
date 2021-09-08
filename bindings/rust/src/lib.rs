@@ -182,6 +182,14 @@ impl<'a> UnicornHandle<'a> {
         self.inner.arch
     }
 
+    /// Return a clone of self
+    pub fn clone(&mut self) -> Self {
+        let unicorn = unsafe { self.inner.as_mut().get_unchecked_mut() } as *mut UnicornInner;
+        UnicornHandle {
+            inner: unsafe { Pin::new_unchecked(&mut *unicorn) },
+        }
+    }
+
     /// Returns a vector with the memory regions that are mapped in the emulator.
     pub fn mem_regions(&self) -> Result<Vec<MemRegion>, uc_error> {
         let mut nb_regions: u32 = 0;
